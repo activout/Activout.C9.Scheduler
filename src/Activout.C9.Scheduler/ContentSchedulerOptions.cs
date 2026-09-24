@@ -19,6 +19,14 @@ public sealed class ContentSchedulerOptions
     /// </summary>
     public string ManagementToken { get; set; } = "";
 
+    /// <summary>
+    /// Content Management API base URL. Default <c>https://api.contentful.com/</c>; use
+    /// <c>https://api.eu.contentful.com/</c> for spaces with EU data residency.
+    /// </summary>
+    public string ManagementApiBaseUrl { get; set; } = "https://api.contentful.com/";
+
+    internal Uri ManagementApiBaseUri => new(ManagementApiBaseUrl.TrimEnd('/') + "/");
+
     /// <summary>Cron expression (evaluated in UTC) controlling how often reconciliation runs.</summary>
     public string ReconcileCron { get; set; } = "";
 

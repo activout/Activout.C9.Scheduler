@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -136,9 +137,9 @@ public sealed class ContentScheduleReconciler
 
         if (dryRun)
         {
-            foreach (var a in cancels) logger.LogInformation("[dry run] would cancel {Action} of entry {EntryId} at {At:o} ({Id})", a.Action, a.EntityId, a.ScheduledFor, a.Id);
-            foreach (var (a, tz) in updates) logger.LogInformation("[dry run] would update {Action} of entry {EntryId} at {At:o} to time zone {TimeZone} ({Id})", a.Action, a.EntityId, a.ScheduledFor, tz, a.Id);
-            foreach (var (k, tz) in creates) logger.LogInformation("[dry run] would create {Action} of entry {EntryId} at {At:o} ({TimeZone})", k.Action, k.EntryId, k.At, tz);
+            foreach (var a in cancels) logger.LogInformation("[dry run] would cancel {Action} of entry {EntryId} at {At} ({Id})", a.Action, a.EntityId, FormatTime(a.ScheduledFor, a.TimeZone), a.Id);
+            foreach (var (a, tz) in updates) logger.LogInformation("[dry run] would update {Action} of entry {EntryId} at {At} to time zone {TimeZone} ({Id})", a.Action, a.EntityId, FormatTime(a.ScheduledFor, a.TimeZone), tz, a.Id);
+            foreach (var (k, tz) in creates) logger.LogInformation("[dry run] would create {Action} of entry {EntryId} at {At}", k.Action, k.EntryId, FormatTime(k.At, tz));
             return new ReconciliationResult(desired.Count, pending.Count, owned.Count, unchanged, creates.Count, updates.Count, cancels.Count, 0, deferred, scheduleFailures);
         }
 
@@ -146,7 +147,7 @@ public sealed class ContentScheduleReconciler
         int cancelled = 0, updated = 0, created = 0, failed = 0;
         foreach (var action in cancels)
         {
-            if (await Try(() => scheduledActions.Cancel(action.Id, cancellationToken), "cancel", action.EntityId, action.Action, action.ScheduledFor, cancellationToken))
+            if (await Try(() => scheduledActions.Cancel(action.Id, cancellationToken), "cancel", action.EntityId, action.Action, FormatTime(action.ScheduledFor, action.TimeZone), cancellationToken))
                 cancelled++;
             else failed++;
         }
@@ -154,7 +155,7 @@ public sealed class ContentScheduleReconciler
         foreach (var (action, timeZone) in updates)
         {
             var request = new ScheduledActionRequest(action.Action, action.EntityId, action.ScheduledFor, timeZone);
-            if (await Try(() => scheduledActions.Update(action.Id, action.Version, request, cancellationToken), "update", action.EntityId, action.Action, action.ScheduledFor, cancellationToken))
+            if (await Try(() => scheduledActions.Update(action.Id, action.Version, request, cancellationToken), "update", action.EntityId, action.Action, FormatTime(action.ScheduledFor, timeZone), cancellationToken))
                 updated++;
             else failed++;
         }
@@ -162,7 +163,7 @@ public sealed class ContentScheduleReconciler
         foreach (var (key, timeZone) in creates)
         {
             var request = new ScheduledActionRequest(key.Action, key.EntryId, key.At, timeZone);
-            if (await Try(() => scheduledActions.Create(request, cancellationToken), "create", key.EntryId, key.Action, key.At, cancellationToken))
+            if (await Try(() => scheduledActions.Create(request, cancellationToken), "create", key.EntryId, key.Action, FormatTime(key.At, timeZone), cancellationToken))
                 created++;
             else failed++;
         }
@@ -174,19 +175,31 @@ public sealed class ContentScheduleReconciler
         return result;
     }
 
-    private async Task<bool> Try(Func<Task> operation, string verb, string entryId, string action, DateTimeOffset at, CancellationToken cancellationToken)
+    private async Task<bool> Try(Func<Task> operation, string verb, string entryId, string action, string at, CancellationToken cancellationToken)
     {
         try
         {
             await operation();
-            logger.LogDebug("{Verb} {Action} of entry {EntryId} at {At:o}", verb, action, entryId, at);
+            logger.LogDebug("{Verb} {Action} of entry {EntryId} at {At}", verb, action, entryId, at);
             return true;
         }
         catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
         {
-            logger.LogError(ex, "Failed to {Verb} {Action} of entry {EntryId} at {At:o}", verb, action, entryId, at);
+            logger.LogError(ex, "Failed to {Verb} {Action} of entry {EntryId} at {At}", verb, action, entryId, at);
             return false;
         }
+    }
+
+    /// <summary>
+    /// Local time in the action's time zone followed by UTC, e.g.
+    /// <c>2026-09-26 23:30 Europe/Stockholm (2026-09-26T21:30:00Z)</c>, so logs read like the cron config.
+    /// </summary>
+    internal static string FormatTime(DateTimeOffset at, string? timeZone)
+    {
+        var utc = at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
+        if (string.IsNullOrEmpty(timeZone) || !TimeZoneInfo.TryFindSystemTimeZoneById(timeZone, out var zone)) return utc;
+        var local = TimeZoneInfo.ConvertTime(at, zone).ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+        return $"{local} {timeZone} ({utc})";
     }
 
     /// <summary>UTC, truncated to whole seconds, so round-tripped Contentful timestamps compare equal.</summary>

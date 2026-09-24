@@ -12,6 +12,8 @@ internal sealed class ContentSchedulerOptionsValidator : IValidateOptions<Conten
         if (string.IsNullOrWhiteSpace(options.SpaceId)) errors.Add("SpaceId is required.");
         if (string.IsNullOrWhiteSpace(options.Environment)) errors.Add("Environment is required.");
         if (string.IsNullOrWhiteSpace(options.ManagementToken)) errors.Add("ManagementToken is required.");
+        if (!Uri.TryCreate(options.ManagementApiBaseUrl, UriKind.Absolute, out var baseUrl) || baseUrl.Scheme != Uri.UriSchemeHttps)
+            errors.Add($"ManagementApiBaseUrl '{options.ManagementApiBaseUrl}' must be an absolute https URL.");
         ValidateCron(options.ReconcileCron, "ReconcileCron", required: true, errors);
         if (options.LookAheadDays <= 0) errors.Add("LookAheadDays must be greater than zero.");
         if (options.LockLease <= TimeSpan.Zero) errors.Add("LockLease must be greater than zero.");

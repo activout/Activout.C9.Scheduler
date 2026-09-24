@@ -53,6 +53,7 @@ public class ValidationTests
     {
         var o = Valid();
         o.LookAheadDays = 0;
+        o.ManagementApiBaseUrl = "http://api.eu.contentful.com";
         o.ReconcileCron = "not cron";
         o.Schedules[0].Publish = "99 * * * *";
         o.Schedules[0].TimeZone = "Mars/Olympus";
@@ -61,6 +62,7 @@ public class ValidationTests
         var errors = Errors(o).ToList();
 
         Assert.Contains(errors, e => e.StartsWith("LookAheadDays"));
+        Assert.Contains(errors, e => e.StartsWith("ManagementApiBaseUrl"));
         Assert.Contains(errors, e => e.StartsWith("ReconcileCron: invalid"));
         Assert.Contains(errors, e => e.Contains("Publish: invalid"));
         Assert.Contains(errors, e => e.Contains("Mars/Olympus"));
@@ -78,6 +80,7 @@ public class ValidationTests
             ["ContentScheduler:ManagementToken"] = "token",
             ["ContentScheduler:ReconcileCron"] = "*/10 * * * *",
             ["ContentScheduler:LockLease"] = "00:05:00",
+            ["ContentScheduler:ManagementApiBaseUrl"] = "https://api.eu.contentful.com",
             ["ContentScheduler:Schedules:0:Name"] = "night",
             ["ContentScheduler:Schedules:0:Selector:Tag"] = "night-content",
             ["ContentScheduler:Schedules:0:Selector:ContentType"] = "campaignPage",
@@ -90,6 +93,8 @@ public class ValidationTests
 
         var options = provider.GetRequiredService<IOptions<ContentSchedulerOptions>>().Value;
         Assert.Equal(TimeSpan.FromMinutes(5), options.LockLease);
+        var http = provider.GetRequiredService<IHttpClientFactory>().CreateClient(HttpScheduledActionsClient.HttpClientName);
+        Assert.Equal(new Uri("https://api.eu.contentful.com/"), http.BaseAddress);
         Assert.Equal("campaignPage", Assert.Single(options.Schedules).Selector.ContentType);
         Assert.NotNull(provider.GetRequiredService<ContentScheduleReconciler>());
         Assert.IsType<AlwaysAvailableContentSchedulerLock>(provider.GetRequiredService<IContentSchedulerLock>());

@@ -70,6 +70,8 @@ internal sealed class ContentfulContentClient(
             SpaceId = o.SpaceId,
             Environment = o.Environment,
             ManagementApiKey = o.ManagementToken,
+            ManagementBaseUrl = new Uri(o.ManagementApiBaseUri, "spaces/").ToString(),
+            DirectApiUrl = o.ManagementApiBaseUri.ToString(),
             MaxNumberOfRateLimitRetries = 3,
         });
     }

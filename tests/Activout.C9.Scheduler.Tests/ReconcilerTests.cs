@@ -212,4 +212,12 @@ public class ReconcilerTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => ctx.CreateReconciler().Reconcile(cancellationToken: new CancellationToken(canceled: true)));
     }
+
+    [Fact]
+    public void FormatTime_ShowsScheduleLocalTimeAndUtc()
+    {
+        Assert.Equal("2026-09-27 00:00 Europe/Stockholm (2026-09-26T22:00:00Z)",
+            ContentScheduleReconciler.FormatTime(new DateTimeOffset(2026, 9, 26, 22, 0, 0, TimeSpan.Zero), "Europe/Stockholm"));
+        Assert.Equal("2026-09-26T22:00:00Z", ContentScheduleReconciler.FormatTime(new DateTimeOffset(2026, 9, 26, 22, 0, 0, TimeSpan.Zero), null));
+    }
 }

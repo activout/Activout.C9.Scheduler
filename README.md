@@ -67,6 +67,7 @@ skip it (they never queue).
 | Setting | Meaning |
 |---|---|
 | `SpaceId`, `Environment` | Contentful space and environment ID |
+| `ManagementApiBaseUrl` | CMA base URL. Default `https://api.contentful.com/`; use `https://api.eu.contentful.com/` for EU data residency |
 | `ManagementToken` | CMA token of a **dedicated** scheduler identity (see below). Never logged. |
 | `ReconcileCron` | How often reconciliation runs, evaluated in **UTC**. It also runs once at startup. |
 | `LookAheadDays` | How far ahead actions are maintained (default 7) |
@@ -78,6 +79,9 @@ skip it (they never queue).
 | `Schedules[].Publish` / `Unpublish` | Standard 5-field cron expressions; at least one is required |
 
 Configuration is validated at startup; invalid configuration fails fast with all errors listed.
+
+Contentful stores action times in UTC. Logs show both, e.g.
+`would create unpublish of entry abc at 2026-09-27 00:00 Europe/Stockholm (2026-09-26T22:00:00Z)`.
 
 ## How reconciliation works
 

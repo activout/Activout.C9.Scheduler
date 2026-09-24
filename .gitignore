@@ -6,3 +6,4 @@ artifacts/
 .idea/
 .DS_Store
 Activout.C9.Scheduler-spec-*.md
+example.json

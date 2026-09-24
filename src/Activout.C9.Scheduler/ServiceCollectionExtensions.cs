@@ -37,7 +37,7 @@ public static class ServiceCollectionExtensions
             .ConfigureHttpClient((sp, client) =>
             {
                 var o = sp.GetRequiredService<IOptions<ContentSchedulerOptions>>().Value;
-                client.BaseAddress = new Uri("https://api.contentful.com/");
+                client.BaseAddress = o.ManagementApiBaseUri;
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", o.ManagementToken);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(HttpScheduledActionsClient.MediaType));
             });
