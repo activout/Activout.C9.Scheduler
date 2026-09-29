@@ -43,5 +43,8 @@ dotnet pack -c Release -o artifacts
 ## CI
 
 `.github/workflows/ci.yml` runs on every push/PR: restore, build, test, pack.
-`.github/workflows/publish.yml` packs and pushes all packages to NuGet.org on `v*` tags using the
-`NUGET_API_KEY` repo secret.
+`.github/workflows/publish.yml` packs and pushes all packages to NuGet.org on `v*` tags using
+NuGet trusted publishing (GitHub OIDC via `NuGet/login`, no long-lived API key). It needs the
+`NUGET_USER` repo secret (nuget.org profile name) and a nuget.org trusted publishing policy for owner
+`activout`, repository `Activout.C9.Scheduler` and workflow file `publish.yml`. It also publishes `.snupkg` symbol
+packages and a keyless build provenance attestation for every package.
