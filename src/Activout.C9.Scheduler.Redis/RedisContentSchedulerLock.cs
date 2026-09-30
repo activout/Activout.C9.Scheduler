@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
 namespace Activout.C9.Scheduler.Redis;
@@ -6,15 +7,22 @@ namespace Activout.C9.Scheduler.Redis;
 /// Redis-backed <see cref="IContentSchedulerLock"/>: atomic <c>SET NX PX</c> with a random owner token,
 /// released only by its owner, never waits.
 /// </summary>
-public sealed class RedisContentSchedulerLock(IConnectionMultiplexer redis) : IContentSchedulerLock
+/// <param name="redis">Redis connection.</param>
+/// <param name="options">Optional configuration, e.g. the key prefix.</param>
+public sealed class RedisContentSchedulerLock(
+    IConnectionMultiplexer redis,
+    IOptions<RedisContentSchedulerLockOptions>? options = null) : IContentSchedulerLock
 {
+    private readonly string keyPrefix = options?.Value.KeyPrefix ?? "";
+
     /// <inheritdoc />
     public async Task<IAsyncDisposable?> TryAcquire(string name, TimeSpan leaseTime, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var database = redis.GetDatabase();
+        RedisKey key = keyPrefix + name;
         var token = Guid.NewGuid().ToString("N");
-        return await database.LockTakeAsync(name, token, leaseTime) ? new Handle(database, name, token) : null;
+        return await database.LockTakeAsync(key, token, leaseTime) ? new Handle(database, key, token) : null;
     }
 
     private sealed class Handle(IDatabase database, RedisKey key, RedisValue token) : IAsyncDisposable

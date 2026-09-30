@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using Testcontainers.Redis;
 
@@ -74,6 +75,42 @@ public class RedisContentSchedulerLockTests(RedisFixture redis) : IClassFixture<
 
         await stale!.DisposeAsync(); // not the owner any more: must not release current's lock
         Assert.Null(await NewInstance().TryAcquire(name, Lease, default));
+    }
+
+    [DockerFact]
+    public async Task KeyPrefix_IsPrependedToKey()
+    {
+        var name = Name();
+        var prefix = "prefix-" + Guid.NewGuid().ToString("N") + ":";
+        var prefixed = new RedisContentSchedulerLock(redis.Connection, Options.Create(new RedisContentSchedulerLockOptions { KeyPrefix = prefix }));
+
+        await using (var handle = await prefixed.TryAcquire(name, Lease, default))
+        {
+            Assert.NotNull(handle);
+            Assert.True(await redis.Connection.GetDatabase().KeyExistsAsync(prefix + name));
+            await using var unprefixed = await NewInstance().TryAcquire(name, Lease, default);
+            Assert.NotNull(unprefixed); // different key, so no contention
+        }
+
+        Assert.False(await redis.Connection.GetDatabase().KeyExistsAsync(prefix + name));
+    }
+
+    [DockerFact]
+    public async Task Registration_AppliesKeyPrefix()
+    {
+        var name = Name();
+        var prefix = "prefix-" + Guid.NewGuid().ToString("N") + ":";
+        using var provider = new ServiceCollection()
+            .AddLogging()
+            .AddSingleton(redis.Connection)
+            .AddContentScheduler(_ => { })
+            .AddContentSchedulerRedisLock(o => o.KeyPrefix = prefix)
+            .BuildServiceProvider();
+
+        await using var handle = await provider.GetRequiredService<IContentSchedulerLock>().TryAcquire(name, Lease, default);
+
+        Assert.NotNull(handle);
+        Assert.True(await redis.Connection.GetDatabase().KeyExistsAsync(prefix + name));
     }
 
     [DockerFact]

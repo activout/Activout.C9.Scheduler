@@ -36,6 +36,13 @@ builder.Services.AddContentScheduler(builder.Configuration.GetSection("ContentSc
 builder.Services.AddContentSchedulerRedisLock();
 ```
 
+To share a Redis instance with other applications, prefix the lock key (default: no prefix,
+key is `content-scheduler:{SpaceId}:{Environment}`):
+
+```csharp
+builder.Services.AddContentSchedulerRedisLock(o => o.KeyPrefix = "myapp:");
+```
+
 All replicas run the same worker; only the one acquiring the lock performs a given run, the others
 skip it (they never queue).
 
