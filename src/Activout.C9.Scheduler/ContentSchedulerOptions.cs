@@ -6,6 +6,12 @@ namespace Activout.C9.Scheduler;
 /// </summary>
 public sealed class ContentSchedulerOptions
 {
+    /// <summary>
+    /// Whether the scheduler runs. Default <c>true</c>. When <c>false</c> the worker and the CLI do
+    /// nothing and the remaining settings are not validated, so they may be left out.
+    /// </summary>
+    public bool Enabled { get; set; } = true;
+
     /// <summary>Contentful space ID.</summary>
     public string SpaceId { get; set; } = "";
 

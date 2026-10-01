@@ -91,6 +91,21 @@ public class WorkerTests
         Assert.Single(ctx.Actions.Operations);
     }
 
+    [Fact]
+    public async Task Disabled_DoesNotRun()
+    {
+        ctx.AddSchedule("night", "30 23 * * *", null, "e1");
+        ctx.Options.Enabled = false;
+        var worker = CreateWorker(new AlwaysAvailableContentSchedulerLock());
+
+        await worker.StartAsync(CancellationToken.None);
+        await WaitFor(() => worker.ExecuteTask?.IsCompleted == true);
+        await worker.StopAsync(CancellationToken.None);
+
+        Assert.Equal(0, ctx.Content.Calls);
+        Assert.Empty(ctx.Actions.Operations);
+    }
+
     private static async Task WaitFor(Func<bool> condition)
     {
         for (var i = 0; i < 200 && !condition(); i++) await Task.Delay(10);

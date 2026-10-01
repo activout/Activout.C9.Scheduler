@@ -15,6 +15,8 @@ const string usage = """
       --dry-run   Log planned creates/updates/cancels without changing anything.
       --verbose   Debug logging.
 
+    Nothing is done (exit code 0) when ContentScheduler:Enabled is false.
+
     Exit codes: 0 success, 1 some operations or schedules failed, 2 invalid usage or configuration.
     """;
 
@@ -56,15 +58,22 @@ var services = new ServiceCollection()
 
 await using var provider = services.BuildServiceProvider();
 
+ContentSchedulerOptions options;
 try
 {
-    _ = provider.GetRequiredService<IOptions<ContentSchedulerOptions>>().Value;
+    options = provider.GetRequiredService<IOptions<ContentSchedulerOptions>>().Value;
 }
 catch (OptionsValidationException ex)
 {
     Console.Error.WriteLine("Invalid ContentScheduler configuration:");
     foreach (var failure in ex.Failures) Console.Error.WriteLine($"  {failure}");
     return 2;
+}
+
+if (!options.Enabled)
+{
+    provider.GetRequiredService<ILogger<Program>>().LogInformation("Content scheduler is disabled (Enabled = false); nothing to do");
+    return 0;
 }
 
 using var cts = new CancellationTokenSource();

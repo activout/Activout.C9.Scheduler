@@ -101,6 +101,27 @@ public class ValidationTests
     }
 
     [Fact]
+    public void Disabled_SkipsValidation() =>
+        Assert.Empty(Errors(new ContentSchedulerOptions { Enabled = false, LookAheadDays = 0 }));
+
+    [Fact]
+    public void Disabled_BindsFromConfigurationWithoutOtherSettings()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["ContentScheduler:Enabled"] = "false",
+        }).Build();
+
+        using var provider = new ServiceCollection().AddLogging()
+            .AddContentScheduler(configuration.GetSection("ContentScheduler")).BuildServiceProvider();
+
+        Assert.False(provider.GetRequiredService<IOptions<ContentSchedulerOptions>>().Value.Enabled);
+    }
+
+    [Fact]
+    public void Enabled_DefaultsToTrue() => Assert.True(new ContentSchedulerOptions().Enabled);
+
+    [Fact]
     public void InvalidConfiguration_FailsThroughDi()
     {
         using var provider = new ServiceCollection().AddLogging()
