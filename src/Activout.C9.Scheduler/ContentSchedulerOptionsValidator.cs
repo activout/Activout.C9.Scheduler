@@ -7,6 +7,8 @@ internal sealed class ContentSchedulerOptionsValidator : IValidateOptions<Conten
 {
     public ValidateOptionsResult Validate(string? name, ContentSchedulerOptions options)
     {
+        if (!options.Enabled) return ValidateOptionsResult.Success;
+
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(options.SpaceId)) errors.Add("SpaceId is required.");

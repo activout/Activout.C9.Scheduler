@@ -7,7 +7,8 @@ namespace Activout.C9.Scheduler;
 
 /// <summary>
 /// Runs reconciliation once at startup and then on every <see cref="ContentSchedulerOptions.ReconcileCron"/>
-/// occurrence (UTC). A run is skipped, never queued, when the lock is held elsewhere.
+/// occurrence (UTC). A run is skipped, never queued, when the lock is held elsewhere. Does nothing when
+/// <see cref="ContentSchedulerOptions.Enabled"/> is <c>false</c>.
 /// </summary>
 internal sealed class ContentSchedulerWorker(
     ContentScheduleReconciler reconciler,
@@ -19,6 +20,12 @@ internal sealed class ContentSchedulerWorker(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await Task.Yield();
+        if (!options.Value.Enabled)
+        {
+            logger.LogInformation("Content scheduler is disabled (Enabled = false); not running");
+            return;
+        }
+
         var cron = CronExpression.Parse(options.Value.ReconcileCron);
         await RunOnce(stoppingToken);
 
