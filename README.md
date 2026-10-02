@@ -51,6 +51,7 @@ skip it (they never queue).
 ```json
 {
   "ContentScheduler": {
+    "Enabled": true,
     "SpaceId": "space-id",
     "Environment": "master",
     "ManagementToken": "secret",
@@ -73,6 +74,7 @@ skip it (they never queue).
 
 | Setting | Meaning |
 |---|---|
+| `Enabled` | Set to `false` to turn the scheduler off in an environment (default `true`). The worker and the CLI then do nothing, and the other settings are neither required nor validated. |
 | `SpaceId`, `Environment` | Contentful space and environment ID |
 | `ManagementApiBaseUrl` | CMA base URL. Default `https://api.contentful.com/`; use `https://api.eu.contentful.com/` for EU data residency |
 | `ManagementToken` | CMA token of a **dedicated** scheduler identity (see below). Never logged. |
