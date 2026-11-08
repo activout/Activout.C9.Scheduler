@@ -122,7 +122,14 @@ any edits made since.
 
 ### Download
 
-Get the file for your computer from the [latest release](https://github.com/activout/Activout.C9.Scheduler/releases/latest). It is a single
+On a Mac (M1 or newer) or Linux with [Homebrew](https://brew.sh), install and update it with:
+
+```sh
+brew install activout/tap/content-scheduler
+brew upgrade content-scheduler
+```
+
+Otherwise, get the file for your computer from the [latest release](https://github.com/activout/Activout.C9.Scheduler/releases/latest). It is a single
 program with nothing else to install. The files are not code signed yet, so your computer warns you the first time.
 
 - **Windows:** download `content-scheduler-win-x64.exe`, rename it to `content-scheduler.exe` and open PowerShell in that folder. If Windows
