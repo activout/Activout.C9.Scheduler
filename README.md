@@ -120,9 +120,32 @@ any edits made since.
 
 ## CLI
 
-```bash
-dotnet tool install --global Activout.C9.Scheduler.Cli
+### Download
 
+Get the file for your computer from the [latest release](https://github.com/activout/Activout.C9.Scheduler/releases/latest). It is a single
+program with nothing else to install. The files are not code signed yet, so your computer warns you the first time.
+
+- **Windows:** download `content-scheduler-win-x64.exe`, rename it to `content-scheduler.exe` and open PowerShell in that folder. If Windows
+  says "Windows protected your PC", click **More info**, then **Run anyway**. Type `.\content-scheduler.exe` where this README
+  says `content-scheduler`.
+- **Mac (M1 or newer):** download `content-scheduler-osx-arm64.tar.gz`, then in Terminal:
+  ```sh
+  cd ~/Downloads
+  tar -xzf content-scheduler-osx-arm64.tar.gz
+  xattr -d com.apple.quarantine content-scheduler
+  sudo mv content-scheduler /usr/local/bin/
+  ```
+- **Linux:** download `content-scheduler-linux-x64.tar.gz`, run `tar -xzf content-scheduler-linux-x64.tar.gz` and move `content-scheduler` to a folder on
+  your `PATH`.
+
+Check a download against the release's `SHA256SUMS`, or verify its build provenance with
+`gh attestation verify <file> -R activout/Activout.C9.Scheduler`.
+
+With .NET 10 installed you can use the .NET tool instead: `dotnet tool install -g Activout.C9.Scheduler.Cli`.
+
+### Use
+
+```bash
 content-scheduler --config scheduler.json --dry-run    # show what would change
 content-scheduler --config scheduler.json              # reconcile once
 ```
