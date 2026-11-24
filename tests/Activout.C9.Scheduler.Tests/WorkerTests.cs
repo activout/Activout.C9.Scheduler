@@ -1,4 +1,5 @@
 using Activout.C9.Scheduler.Tests.Support;
+using TestContext = Activout.C9.Scheduler.Tests.Support.TestContext;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Activout.C9.Scheduler.Tests;
@@ -26,8 +27,8 @@ public class WorkerTests
     public async Task DefaultLock_AlwaysSucceeds()
     {
         var schedulerLock = new AlwaysAvailableContentSchedulerLock();
-        await using var first = await schedulerLock.TryAcquire("x", TimeSpan.FromMinutes(1), default);
-        await using var second = await schedulerLock.TryAcquire("x", TimeSpan.FromMinutes(1), default);
+        await using var first = await schedulerLock.TryAcquire("x", TimeSpan.FromMinutes(1), Xunit.TestContext.Current.CancellationToken);
+        await using var second = await schedulerLock.TryAcquire("x", TimeSpan.FromMinutes(1), Xunit.TestContext.Current.CancellationToken);
         Assert.NotNull(first);
         Assert.NotNull(second);
     }
@@ -38,7 +39,7 @@ public class WorkerTests
         ctx.AddSchedule("night", "30 23 * * *", null, "e1");
         var schedulerLock = new UnavailableLock();
 
-        await CreateWorker(schedulerLock).RunOnce(default);
+        await CreateWorker(schedulerLock).RunOnce(Xunit.TestContext.Current.CancellationToken);
 
         Assert.Equal("content-scheduler:space:master", schedulerLock.RequestedName);
         Assert.Equal(0, ctx.Content.Calls);
@@ -50,7 +51,7 @@ public class WorkerTests
     {
         ctx.AddSchedule("night", "30 23 * * *", null, "e1");
 
-        await CreateWorker(new AlwaysAvailableContentSchedulerLock()).RunOnce(default);
+        await CreateWorker(new AlwaysAvailableContentSchedulerLock()).RunOnce(Xunit.TestContext.Current.CancellationToken);
 
         Assert.Single(ctx.Actions.Operations);
     }
@@ -61,7 +62,7 @@ public class WorkerTests
         ctx.AddSchedule("night", "30 23 * * *", null, "e1");
         ctx.Content.IdentityFails = true;
 
-        await CreateWorker(new AlwaysAvailableContentSchedulerLock()).RunOnce(default);
+        await CreateWorker(new AlwaysAvailableContentSchedulerLock()).RunOnce(Xunit.TestContext.Current.CancellationToken);
 
         Assert.Empty(ctx.Actions.Operations);
     }
@@ -84,6 +85,7 @@ public class WorkerTests
 
         await worker.StartAsync(cts.Token);
         await WaitFor(() => ctx.Content.Calls == 2); // startup run: resolve + identity
+        await WaitFor(() => ctx.Time.Timers == 1); // waiting for the next cron occurrence
         ctx.Time.Advance(TimeSpan.FromMinutes(10));
         await WaitFor(() => ctx.Content.Calls == 4);
         await worker.StopAsync(CancellationToken.None);

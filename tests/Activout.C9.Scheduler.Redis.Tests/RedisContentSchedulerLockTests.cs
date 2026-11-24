@@ -11,7 +11,7 @@ public sealed class RedisFixture : IAsyncLifetime
 
     public IConnectionMultiplexer Connection { get; private set; } = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         try
         {
@@ -25,7 +25,7 @@ public sealed class RedisFixture : IAsyncLifetime
         }
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         Connection?.Dispose();
         if (container is not null) await container.DisposeAsync();
