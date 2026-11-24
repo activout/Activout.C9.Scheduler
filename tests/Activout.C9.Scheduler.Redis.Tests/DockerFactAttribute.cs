@@ -1,4 +1,5 @@
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 
 namespace Activout.C9.Scheduler.Redis.Tests;
 
@@ -7,7 +8,8 @@ public sealed class DockerFactAttribute : FactAttribute
 {
     private static readonly bool DockerAvailable = Environment.GetEnvironmentVariable("CI") == "true" || CanConnect();
 
-    public DockerFactAttribute()
+    public DockerFactAttribute([CallerFilePath] string? sourceFilePath = null, [CallerLineNumber] int sourceLineNumber = -1)
+        : base(sourceFilePath, sourceLineNumber)
     {
         if (!DockerAvailable) Skip = "Docker is not available";
     }

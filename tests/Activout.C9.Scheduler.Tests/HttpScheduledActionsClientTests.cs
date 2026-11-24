@@ -45,7 +45,7 @@ public class HttpScheduledActionsClientTests
             ? Json("""{"items":[""" + Action("b", "other") + """],"pages":{}}""")
             : Json("""{"items":[""" + Action("a", "me") + """],"pages":{"next":"/spaces/space/scheduled_actions?environment.sys.id=master&next=cursor"}}"""));
 
-        var actions = await Client(handler).GetPending(default);
+        var actions = await Client(handler).GetPending(TestContext.Current.CancellationToken);
 
         Assert.Equal(["a", "b"], actions.Select(a => a.Id));
         Assert.Equal(
@@ -69,7 +69,7 @@ public class HttpScheduledActionsClientTests
         var handler = new StubHandler((_, _) => Json(Action("new", "me"), HttpStatusCode.Created));
 
         await Client(handler).Create(new ScheduledActionRequest("unpublish", "e1",
-            new DateTimeOffset(2026, 9, 24, 22, 0, 0, TimeSpan.Zero), "Europe/Stockholm"), default);
+            new DateTimeOffset(2026, 9, 24, 22, 0, 0, TimeSpan.Zero), "Europe/Stockholm"), TestContext.Current.CancellationToken);
 
         var (request, body) = Assert.Single(handler.Requests);
         Assert.Equal(HttpMethod.Post, request.Method);
@@ -85,8 +85,8 @@ public class HttpScheduledActionsClientTests
         var handler = new StubHandler((_, _) => Json(Action("a", "me")));
         var client = Client(handler);
 
-        await client.Update("a", 3, new ScheduledActionRequest("publish", "e1", DateTimeOffset.UnixEpoch, "UTC"), default);
-        await client.Cancel("a", default);
+        await client.Update("a", 3, new ScheduledActionRequest("publish", "e1", DateTimeOffset.UnixEpoch, "UTC"), TestContext.Current.CancellationToken);
+        await client.Cancel("a", TestContext.Current.CancellationToken);
 
         Assert.Equal("3", handler.Requests[0].Request.Headers.GetValues("X-Contentful-Version").Single());
         Assert.Equal(HttpMethod.Put, handler.Requests[0].Request.Method);
@@ -99,7 +99,7 @@ public class HttpScheduledActionsClientTests
     {
         var handler = new StubHandler((_, _) => Json("""{"sys":{"id":"ValidationFailed"},"message":"limit reached"}""", HttpStatusCode.UnprocessableEntity));
 
-        var ex = await Assert.ThrowsAsync<ScheduledActionsApiException>(() => Client(handler).Cancel("a", default));
+        var ex = await Assert.ThrowsAsync<ScheduledActionsApiException>(() => Client(handler).Cancel("a", TestContext.Current.CancellationToken));
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, ex.StatusCode);
         Assert.Contains("limit reached", ex.Message);

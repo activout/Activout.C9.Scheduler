@@ -71,13 +71,27 @@ internal sealed class FakeScheduledActionsClient : IScheduledActionsClient
     }
 }
 
+/// <summary>Counts created timers, so a test can wait until a worker is waiting on <c>Task.Delay</c>.</summary>
+internal sealed class TimerCountingTimeProvider(DateTimeOffset start) : FakeTimeProvider(start)
+{
+    private int timers;
+
+    public int Timers => Volatile.Read(ref timers);
+
+    public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+    {
+        Interlocked.Increment(ref timers);
+        return base.CreateTimer(callback, state, dueTime, period);
+    }
+}
+
 internal sealed class TestContext
 {
     public static readonly DateTimeOffset Now = new(2026, 9, 24, 12, 0, 0, TimeSpan.Zero);
 
     public FakeContentClient Content { get; } = new();
     public FakeScheduledActionsClient Actions { get; } = new();
-    public FakeTimeProvider Time { get; } = new(Now);
+    public TimerCountingTimeProvider Time { get; } = new(Now);
     public ContentSchedulerOptions Options { get; } = new()
     {
         SpaceId = "space",

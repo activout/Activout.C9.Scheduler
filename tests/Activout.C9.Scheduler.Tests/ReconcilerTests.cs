@@ -1,4 +1,5 @@
 using Activout.C9.Scheduler.Tests.Support;
+using TestContext = Activout.C9.Scheduler.Tests.Support.TestContext;
 
 namespace Activout.C9.Scheduler.Tests;
 
